@@ -1,21 +1,29 @@
 defmodule Plist do
   @moduledoc """
-  The entry point for reading plist data.
+  The entry point for encode/decode plist data.
   """
 
-  @type result :: any
+  @type plist_data :: any
 
   @doc """
   Parse the data provided as an XML or binary format plist,
   depending on the header.
   """
-  @spec decode(String.t()) :: result
+  @spec decode(String.t()) :: plist_data
   def decode(data) do
     case String.slice(data, 0, 8) do
       "bplist00" -> Plist.Binary.decode(data)
       "<?xml ve" -> Plist.XML.decode(data)
       _ -> raise "Unknown plist format"
     end
+  end
+
+  @doc """
+  Encode data into XML format plist.
+  """
+  @spec encode(plist_data) :: String.t()
+  def encode(data) do
+    Plist.Encoder.encode(data)
   end
 
   @doc false

@@ -7,78 +7,81 @@ defmodule Plist.Encoder do
   end
 
   def wrap(data) do
+    content = plist_node(data, "", "")
+    |> String.trim
+
     """
-    <?xml version="1.0" encoding="UTF-8"?>\n
-    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n
-    <plist version="1.0">\n
-    #{plist_node(data, "")}
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <plist version="1.0">
+    #{content}
     </plist>\n
     """
   end
 
   # Map
-  def plist_node(map, indent) when is_map(map) do
+  def plist_node(map, indent, total) when is_map(map) do
     if Enum.empty?(map) do
-      indent <> "<dict/>\n"
+      total <> indent <> "<dict/>\n"
     else
-      break_tag("dict", indent, Enum.reduce(map, "", fn {key, value}, acc ->
-            acc <> tag("key", indent <> @indent, key, []) <> plist_node(value, indent <> @indent)
+      total <> break_tag("dict", indent, Enum.reduce(map, "", fn {key, value}, acc ->
+            plist_node(value, indent <> @indent, acc <> tag("key", indent <> @indent, key, []))
           end), [])
     end
   end
 
   # List
-  def plist_node([], indent) do
-    indent <> "<array/>\n"
+  def plist_node([], indent, total) do
+    total <> indent <> "<array/>\n"
   end
 
-  def plist_node(list, indent) when is_list(list) do
-    break_tag("array", indent, Enum.reduce(list, "", fn item, acc ->
-          acc <> plist_node(item, indent <> @indent)
+  def plist_node(list, indent, total) when is_list(list) do
+    total <> break_tag("array", indent, Enum.reduce(list, "", fn item, acc ->
+          plist_node(item, indent <> @indent, acc)
         end), [])
   end
 
   # String
-  def plist_node(string, indent) when is_binary(string) do
-    tag("string", indent, string, [])
+  def plist_node(string, indent, total) when is_binary(string) do
+    total <> tag("string", indent, string, [])
   end
 
   # Atom
-  def plist_node(atom, indent) when is_atom(atom) do
-    tag("string", indent, to_string(atom), [])
+  def plist_node(atom, indent, total) when is_atom(atom) do
+    total <> tag("string", indent, to_string(atom), [])
   end
 
   # Boolean
-  def plist_node(bool, indent) when is_boolean(bool) do
-    indent <> "<#{bool}/>\n"
+  def plist_node(bool, indent, total) when is_boolean(bool) do
+    total <> indent <> "<#{bool}/>\n"
   end
 
   # NaiveTime
-  def plist_node(%DateTime{} = date, indent) do
-    tag("date", indent, DateTime.to_string(date), [])
+  def plist_node(%DateTime{} = date, indent, total) do
+    total <> tag("date", indent, DateTime.to_string(date), [])
   end
 
-  def plist_node(%NaiveDateTime{} = date, indent) do
-    tag("date", indent, NaiveDateTime.to_string(date), [])
+  def plist_node(%NaiveDateTime{} = date, indent, total) do
+    total <> tag("date", indent, NaiveDateTime.to_string(date), [])
   end
 
   # Integer
-  def plist_node(integer, indent) when is_integer(integer) do
-    tag("integer", indent, integer, [])
+  def plist_node(integer, indent, total) when is_integer(integer) do
+    total <> tag("integer", indent, integer, [])
   end
 
   # Float
-  def plist_node(float, indent) when is_float(float) do
-    tag("real", indent, float, [])
+  def plist_node(float, indent, total) when is_float(float) do
+    total <> tag("real", indent, float, [])
   end
 
   # --
 
-  defp tag(type, indent, content, options) do
+  defp tag(type, indent, content, _options) do
     "#{indent}<#{type}>#{content |> to_string}</#{type}>\n"
   end
 
-  defp break_tag(type, indent, content, options) do
+  defp break_tag(type, indent, content, _options) do
     "#{indent}<#{type}>\n#{content |> to_string}#{indent}</#{type}>\n"
   end
 end
