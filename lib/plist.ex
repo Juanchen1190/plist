@@ -21,9 +21,9 @@ defmodule Plist do
   @doc """
   Encode data into XML format plist.
   """
-  @spec encode(plist_data) :: String.t()
-  def encode(data) do
-    Plist.Encoder.encode(data)
+  @spec encode(plist_data, Keyword.t()) :: String.t()
+  def encode(data, config \\ []) when is_list(config) do
+    Plist.Encoder.encode(data, config)
   end
 
   @doc false
